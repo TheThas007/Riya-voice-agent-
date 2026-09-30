@@ -1,0 +1,10 @@
+{
+  "name": "Riya - Real-time Voice Agent",
+  "description": "A real-time conversational Tamil and English voice agent powered by Gemini Multimodal Live API.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

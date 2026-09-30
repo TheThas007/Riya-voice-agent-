@@ -1,0 +1,34 @@
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import {defineConfig, Plugin} from 'vite';
+
+function apiKeyPlugin(): Plugin {
+  return {
+    name: 'api-key-provider',
+    configureServer(server) {
+      server.middlewares.use('/api/key', (_req, res) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ key: process.env.GEMINI_API_KEY || '' }));
+      });
+    },
+  };
+}
+
+export default defineConfig(() => {
+  return {
+    plugins: [react(), tailwindcss(), apiKeyPlugin()],
+    resolve: {
+      alias: {
+        '@': path.resolve(import.meta.dirname, '.'),
+      },
+    },
+    server: {
+      // HMR is disabled in AI Studio via DISABLE_HMR env var.
+      // Do not modify—file watching is disabled to prevent flickering during agent edits.
+      hmr: process.env.DISABLE_HMR !== 'true',
+      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
+      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+    },
+  };
+});

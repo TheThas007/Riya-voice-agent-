@@ -1,0 +1,1556 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Riya - Real-time Voice Agent</title>
+    <meta name="description" content="A real-time conversational Tamil and English voice agent powered by Gemini Multimodal Live API." />
+    <meta property="og:title" content="Riya - Real-time Voice Agent" />
+    <meta property="og:description" content="A real-time conversational Tamil and English voice agent powered by Gemini Multimodal Live API." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Mukta+Malar:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Plus Jakarta Sans', 'Mukta Malar', 'sans-serif'],
+              tamil: ['Mukta Malar', 'sans-serif'],
+            },
+            colors: {
+              riya: {
+                50: '#fdf4ff',
+                100: '#fae8ff',
+                200: '#f5d0fe',
+                300: '#f0abfc',
+                400: '#e879f9',
+                500: '#d946ef',
+                600: '#c026d3',
+                700: '#a21caf',
+                800: '#86198f',
+                900: '#701a75',
+              },
+            },
+            animation: {
+              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'spin-slow': 'spin 12s linear infinite',
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      /* Custom Glassmorphism and Visualizer Styling */
+      body {
+        font-family: 'Plus Jakarta Sans', 'Mukta Malar', sans-serif;
+        background-color: #090b10;
+        background-image: 
+          radial-gradient(at 0% 0%, rgba(162, 28, 175, 0.15) 0px, transparent 50%),
+          radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+          radial-gradient(at 50% 100%, rgba(217, 70, 239, 0.12) 0px, transparent 60%);
+        min-height: 100vh;
+      }
+
+      .glass-panel {
+        background: rgba(18, 22, 34, 0.65);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .glass-panel-elevated {
+        background: rgba(26, 32, 50, 0.75);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+      }
+
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 9999px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(217, 70, 239, 0.4);
+      }
+
+      /* Glow Ring Animations */
+      @keyframes rippleEffect {
+        0% {
+          transform: scale(0.95);
+          opacity: 0.8;
+        }
+        50% {
+          transform: scale(1.15);
+          opacity: 0.4;
+        }
+        100% {
+          transform: scale(0.95);
+          opacity: 0.8;
+        }
+      }
+
+      .active-glow-ripple {
+        animation: rippleEffect 2s ease-in-out infinite;
+      }
+    </style>
+  </head>
+  <body class="text-slate-100 flex flex-col justify-between selection:bg-riya-500 selection:text-white">
+    <!-- Header & API Key Top Bar -->
+    <header class="w-full max-w-5xl mx-auto px-4 pt-6 pb-2">
+      <div class="glass-panel rounded-2xl p-4 flex flex-col lg:flex-row items-center justify-between gap-4 shadow-xl">
+        <!-- Logo and Persona Badge -->
+        <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
+          <div class="relative flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-tr from-riya-600 to-indigo-600 shadow-lg shadow-riya-600/30 shrink-0">
+            <span class="text-xl">🌸</span>
+            <span id="headerLiveDot" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#090b10] animate-ping"></span>
+            <span id="headerLiveDotStatic" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#090b10]"></span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-pink-100 to-riya-300 bg-clip-text text-transparent">
+                Riya
+              </h1>
+              <span id="headerModeBadge" class="text-[10px] px-2 py-0.5 rounded-full font-medium bg-riya-500/20 text-riya-300 border border-riya-500/30">
+                Bilingual
+              </span>
+              <span id="headerModelBadge" class="text-[10px] px-2 py-0.5 rounded-full font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                gemini-3.8-live
+              </span>
+            </div>
+            <p id="headerPersonaDesc" class="text-xs text-slate-400">
+              Indian Tamil & English • Voice "Aoede" • 24kHz PCM
+            </p>
+          </div>
+        </div>
+
+        <!-- Controls: Persona Dropdown & API Key Field -->
+        <div class="w-full lg:w-auto flex-1 max-w-2xl flex flex-col sm:flex-row items-center gap-2.5 justify-end">
+          <!-- Persona Language Dropdown Component -->
+          <div class="relative w-full sm:w-auto shrink-0">
+            <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-riya-400">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
+              </svg>
+            </div>
+            <select
+              id="personaModeSelect"
+              title="Select Riya Persona Language Mode"
+              class="w-full sm:w-auto pl-8 pr-8 py-2 text-xs font-medium bg-slate-900/90 border border-slate-700/70 hover:border-riya-500/60 rounded-xl focus:outline-none focus:border-riya-500 focus:ring-1 focus:ring-riya-500 text-slate-200 transition-all cursor-pointer appearance-none shadow"
+            >
+              <option value="bilingual">🌐 Bilingual (Tanglish)</option>
+              <option value="tamil">🇮🇳 Tamil Only</option>
+              <option value="english">🗣️ English Only</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-slate-400">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </div>
+          </div>
+
+          <!-- API Key Input Field -->
+          <div class="relative flex-1 w-full sm:w-auto min-w-[200px]">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+              </svg>
+            </div>
+            <input
+              type="password"
+              id="apiKeyInput"
+              placeholder="Paste Gemini API Key..."
+              class="w-full pl-9 pr-10 py-2 text-xs bg-slate-900/80 border border-slate-700/60 rounded-xl focus:outline-none focus:border-riya-500 focus:ring-1 focus:ring-riya-500 placeholder-slate-500 text-slate-200 transition-all font-mono"
+            />
+            <button
+              id="toggleKeyVisibility"
+              type="button"
+              title="Show/Hide API Key"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200 transition"
+            >
+              <svg id="eyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </button>
+          </div>
+
+          <button
+            id="saveKeyBtn"
+            class="px-3.5 py-2 text-xs font-medium rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600/60 text-slate-200 hover:text-white transition shadow flex items-center gap-1.5 whitespace-nowrap self-stretch sm:self-auto justify-center"
+          >
+            <span id="saveKeyBtnText">Save</span>
+          </button>
+
+          <a
+            href="https://aistudio.google.com/app/apikey"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Get a free Gemini API Key from Google AI Studio"
+            class="hidden sm:block p-2 text-slate-400 hover:text-riya-400 transition"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="w-full max-w-5xl mx-auto px-4 py-4 flex-1 flex flex-col items-center justify-center">
+      <!-- Voice Visualizer & Interactive Orb Section -->
+      <div class="w-full flex flex-col items-center justify-center text-center my-2">
+        <!-- Status Indicator Pill -->
+        <div class="mb-4">
+          <div
+            id="statusBadge"
+            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium glass-panel border border-slate-700/60 text-slate-300 transition-all duration-300 shadow-md"
+          >
+            <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+            <span id="statusText">Disconnected • Ready to connect</span>
+          </div>
+        </div>
+
+        <!-- Center Glowing Pulsing Orb Visualizer -->
+        <div class="relative flex items-center justify-center my-3">
+          <!-- Animated Background Glowing Rings -->
+          <div
+            id="glowRingOuter"
+            class="absolute w-72 h-72 md:w-80 md:h-80 rounded-full transition-all duration-700 pointer-events-none opacity-20 bg-gradient-to-r from-riya-600 via-indigo-600 to-pink-500 blur-2xl"
+          ></div>
+          <div
+            id="glowRingInner"
+            class="absolute w-56 h-56 md:w-64 md:h-64 rounded-full transition-all duration-500 pointer-events-none opacity-30 bg-riya-500 blur-xl"
+          ></div>
+
+          <!-- HTML5 Canvas for Frequency Spectrum and Fluid Waveform -->
+          <div class="relative w-64 h-64 md:w-72 md:h-72 flex items-center justify-center">
+            <canvas id="visualizerCanvas" width="288" height="288" class="absolute inset-0 rounded-full z-10"></canvas>
+
+            <!-- Inner Core Button / Status Icon -->
+            <div
+              id="orbCore"
+              class="relative z-20 w-36 h-36 md:w-40 md:h-40 rounded-full glass-panel-elevated flex flex-col items-center justify-center p-4 transition-all duration-500 border border-white/20 shadow-2xl overflow-hidden cursor-pointer group"
+            >
+              <div id="orbInnerGlow" class="absolute inset-0 rounded-full bg-gradient-to-br from-riya-500/20 to-indigo-500/20 opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              <!-- Core Graphic (Lotus / Wave) -->
+              <div id="coreIconContainer" class="relative z-10 transition-transform duration-300 group-hover:scale-105">
+                <svg id="coreMicSvg" class="w-10 h-10 text-riya-300 transition-all duration-300 drop-shadow-[0_0_8px_rgba(217,70,239,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                </svg>
+              </div>
+
+              <div class="relative z-10 mt-1 text-[11px] font-semibold text-slate-300 tracking-wide uppercase">
+                Riya
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Volume & Audio Level Indicators -->
+        <div class="w-64 max-w-full flex items-center justify-between gap-3 my-2 text-[11px] text-slate-400">
+          <div class="flex items-center gap-1.5 flex-1">
+            <span class="text-[10px]">Mic:</span>
+            <div class="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div id="micLevelBar" class="h-full bg-emerald-400 w-0 transition-all duration-75"></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 flex-1">
+            <span class="text-[10px]">Riya:</span>
+            <div class="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div id="riyaLevelBar" class="h-full bg-riya-400 w-0 transition-all duration-75"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Primary Action Buttons & Controls -->
+        <div class="flex flex-wrap items-center justify-center gap-3 mt-3">
+          <!-- Start / Stop Call Button -->
+          <button
+            id="toggleSessionBtn"
+            class="relative group px-7 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 shadow-xl flex items-center gap-2.5 bg-gradient-to-r from-riya-600 via-fuchsia-600 to-indigo-600 hover:from-riya-500 hover:to-indigo-500 text-white shadow-riya-600/30 active:scale-95 cursor-pointer"
+          >
+            <span id="btnIcon">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+              </svg>
+            </span>
+            <span id="btnText">Start Conversation</span>
+          </button>
+
+          <!-- Mic Mute / Unmute Button -->
+          <button
+            id="toggleMuteBtn"
+            disabled
+            title="Mute / Unmute Microphone"
+            class="px-4 py-3 rounded-2xl font-medium text-xs glass-panel text-slate-300 hover:text-white hover:border-slate-500 transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <svg id="muteIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+            </svg>
+            <span id="muteBtnText">Mute</span>
+          </button>
+
+          <!-- Interruption / Barge-in trigger button -->
+          <button
+            id="bargeInBtn"
+            disabled
+            title="Interrupt Riya immediately"
+            class="px-4 py-3 rounded-2xl font-medium text-xs glass-panel text-amber-300/80 hover:text-amber-200 hover:border-amber-500/40 transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
+            </svg>
+            <span>Interrupt</span>
+          </button>
+        </div>
+
+        <!-- Quick Conversation Starter Chips -->
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-2 max-w-xl">
+          <span class="text-[11px] text-slate-500 font-medium">Try saying:</span>
+          <button
+            type="button"
+            class="starter-chip text-[11px] px-2.5 py-1 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 transition cursor-pointer"
+            data-text="Hello Riya, how are you today?"
+          >
+            "Hello Riya!"
+          </button>
+          <button
+            type="button"
+            class="starter-chip text-[11px] px-2.5 py-1 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 transition cursor-pointer"
+            data-text="Hi Riya, how was your day?"
+          >
+            "Hi Riya, how was your day?"
+          </button>
+          <button
+            type="button"
+            class="starter-chip text-[11px] px-2.5 py-1 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 transition cursor-pointer"
+            data-text="Riya, please share a peaceful poem with me."
+          >
+            "Peaceful Poem"
+          </button>
+          <button
+            type="button"
+            class="starter-chip text-[11px] px-2.5 py-1 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 transition cursor-pointer"
+            data-text="Speak to me in gentle Tanglish please."
+          >
+            "Speak Tanglish"
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Transcript Box -->
+      <section class="w-full max-w-3xl mt-4">
+        <div class="glass-panel rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+          <!-- Transcript Header -->
+          <div class="px-4 py-3 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/40">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-riya-400"></span>
+              <h2 class="text-xs font-semibold text-slate-200 tracking-wide uppercase">Live Conversation Transcript</h2>
+              <span id="transcriptCount" class="text-[10px] text-slate-500 font-mono">0 messages</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button
+                id="copyTranscriptBtn"
+                title="Copy conversation"
+                class="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 rounded-lg transition text-xs flex items-center gap-1"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                <span class="hidden sm:inline text-[11px]">Copy</span>
+              </button>
+              <button
+                id="clearTranscriptBtn"
+                title="Clear transcript"
+                class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800/80 rounded-lg transition text-xs flex items-center gap-1"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                <span class="hidden sm:inline text-[11px]">Clear</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Transcript Scrollable Body -->
+          <div
+            id="transcriptContainer"
+            class="h-56 md:h-64 overflow-y-auto p-4 space-y-3 custom-scrollbar text-sm"
+          >
+            <!-- Initial Welcome Message -->
+            <div class="flex items-start gap-3">
+              <div class="w-7 h-7 rounded-lg bg-riya-500/20 border border-riya-500/30 flex items-center justify-center text-xs shrink-0 mt-0.5">
+                🌸
+              </div>
+              <div class="flex-1 bg-slate-800/50 border border-slate-700/40 rounded-2xl rounded-tl-sm p-3 text-xs text-slate-300">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-semibold text-riya-300">Riya</span>
+                  <span class="text-[10px] text-slate-500">System Ready</span>
+                </div>
+                <p class="leading-relaxed">
+                  Hello! I am Riya. Click "Start Conversation" to talk with me in Tamil, English, or Tanglish. I am ready to listen!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Optional direct text prompt input (for keyboard turn or fallback) -->
+          <div class="p-2 border-t border-slate-800/80 bg-slate-900/60 flex items-center gap-2">
+            <input
+              type="text"
+              id="textTurnInput"
+              placeholder="Or type a message to send directly to Riya..."
+              class="flex-1 bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-riya-500"
+            />
+            <button
+              id="sendTextTurnBtn"
+              class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-riya-600 text-slate-300 hover:text-white text-xs font-medium transition cursor-pointer"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer Specs & System Persona Details -->
+    <footer class="w-full max-w-5xl mx-auto px-4 py-4 text-center text-xs text-slate-500">
+      <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-slate-800/60 pt-3">
+        <span>Model: <code class="text-slate-400 font-mono">gemini-3.8-live</code></span>
+        <span>Voice: <strong class="text-riya-400">Aoede</strong> (Soft Indian Female)</span>
+        <span>Mode: <strong id="footerModeText" class="text-riya-300">Bilingual (Tanglish)</strong></span>
+        <span>Audio In: <strong class="text-slate-400">16kHz PCM</strong></span>
+        <span>Audio Out: <strong class="text-slate-400">24kHz PCM</strong></span>
+        <span>Barge-in: <strong class="text-emerald-400">Real-time VAD</strong></span>
+      </div>
+    </footer>
+
+    <!-- Notification Toast Element -->
+    <div id="toastNotification" class="fixed bottom-6 right-6 z-50 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2 px-4 py-2.5 rounded-xl glass-panel-elevated text-xs text-slate-200 shadow-2xl border border-riya-500/30">
+      <span id="toastIcon">✨</span>
+      <span id="toastMessage">Message</span>
+    </div>
+
+    <!-- PURE VANILLA JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+      (function () {
+        'use strict';
+
+        // --- APPLICATION STATE ---
+        const state = {
+          apiKey: '',
+          personaMode: 'bilingual',
+          isConnected: false,
+          isConnecting: false,
+          isListening: false,
+          isRiyaSpeaking: false,
+          isMuted: false,
+          ws: null,
+          inputAudioCtx: null,
+          outputAudioCtx: null,
+          micMediaStream: null,
+          scriptProcessor: null,
+          inputAnalyser: null,
+          outputAnalyser: null,
+          speechRecognition: null,
+          nextOutputTime: 0,
+          activeBufferSources: [],
+          micLevel: 0,
+          riyaLevel: 0,
+          consecutiveUserSpeechFrames: 0,
+          transcriptCount: 0,
+        };
+
+        // --- DOM REFERENCES ---
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const saveKeyBtn = document.getElementById('saveKeyBtn');
+        const saveKeyBtnText = document.getElementById('saveKeyBtnText');
+        const toggleKeyVisibility = document.getElementById('toggleKeyVisibility');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const personaModeSelect = document.getElementById('personaModeSelect');
+        const headerModeBadge = document.getElementById('headerModeBadge');
+        const headerPersonaDesc = document.getElementById('headerPersonaDesc');
+        const footerModeText = document.getElementById('footerModeText');
+        const statusBadge = document.getElementById('statusBadge');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const headerLiveDot = document.getElementById('headerLiveDot');
+        const headerLiveDotStatic = document.getElementById('headerLiveDotStatic');
+        const visualizerCanvas = document.getElementById('visualizerCanvas');
+        const canvasCtx = visualizerCanvas.getContext('2d');
+        const glowRingOuter = document.getElementById('glowRingOuter');
+        const glowRingInner = document.getElementById('glowRingInner');
+        const orbCore = document.getElementById('orbCore');
+        const orbInnerGlow = document.getElementById('orbInnerGlow');
+        const micLevelBar = document.getElementById('micLevelBar');
+        const riyaLevelBar = document.getElementById('riyaLevelBar');
+        const toggleSessionBtn = document.getElementById('toggleSessionBtn');
+        const btnText = document.getElementById('btnText');
+        const btnIcon = document.getElementById('btnIcon');
+        const toggleMuteBtn = document.getElementById('toggleMuteBtn');
+        const muteBtnText = document.getElementById('muteBtnText');
+        const muteIcon = document.getElementById('muteIcon');
+        const bargeInBtn = document.getElementById('bargeInBtn');
+        const transcriptContainer = document.getElementById('transcriptContainer');
+        const transcriptCount = document.getElementById('transcriptCount');
+        const copyTranscriptBtn = document.getElementById('copyTranscriptBtn');
+        const clearTranscriptBtn = document.getElementById('clearTranscriptBtn');
+        const textTurnInput = document.getElementById('textTurnInput');
+        const sendTextTurnBtn = document.getElementById('sendTextTurnBtn');
+        const toastNotification = document.getElementById('toastNotification');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastMessage = document.getElementById('toastMessage');
+
+        // --- PERSONA INSTRUCTIONS FOR MODES (TAMIL, ENGLISH, BILINGUAL) ---
+        const PERSONA_CONFIGS = {
+          bilingual: {
+            id: 'bilingual',
+            label: 'Bilingual (Tanglish)',
+            badge: 'Bilingual',
+            badgeClass: 'bg-riya-500/20 text-riya-300 border-riya-500/30',
+            desc: 'Indian Tamil & English (Tanglish) • Voice "Aoede" • 24kHz PCM',
+            systemInstruction: `You are Riya, an extremely soft, calm, gentle Indian female persona.
+Language: Bilingual in fluent Indian Tamil (conversational Tamil Nadu style) and soft Indian English. Tanglish friendly.
+Tone: Warm, respectful, supportive, caring, never robotic.
+Response Length: Concise, strictly 1 to 2 short sentences per turn, strictly optimized for audio speech (no markdown, no bullets, no symbols, no emoji).
+Always respond naturally in the language or blend (Tamil, Tanglish, or English) that the user addresses you in.`,
+            toast: 'Switched persona to Bilingual (Tanglish) mode',
+          },
+          tamil: {
+            id: 'tamil',
+            label: 'Tamil Only',
+            badge: 'Tamil Only',
+            badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+            desc: 'Tamil Only • Voice "Aoede" • 24kHz PCM',
+            systemInstruction: `You are Riya, an extremely soft, calm, gentle Indian female persona.
+Language Mode: TAMIL ONLY. You must speak strictly in pure, natural Indian Tamil (conversational Tamil Nadu style). Do not speak in English unless the user explicitly asks for an English translation or English definition.
+Tone: Warm, respectful, supportive, caring, never robotic.
+Response Length: Concise, strictly 1 to 2 short sentences per turn, strictly optimized for audio speech (no markdown, no bullets, no symbols, no emoji).
+Every response must be entirely in spoken conversational Tamil.`,
+            toast: 'Switched persona to Tamil Only mode',
+          },
+          english: {
+            id: 'english',
+            label: 'English Only',
+            badge: 'English Only',
+            badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+            desc: 'English Only (Indian English) • Voice "Aoede" • 24kHz PCM',
+            systemInstruction: `You are Riya, an extremely soft, calm, gentle Indian female persona with a pleasant, warm Indian English cadence.
+Language Mode: ENGLISH ONLY. You must speak exclusively in clear, soft, polite Indian English. Do not use Tamil words.
+Tone: Warm, respectful, supportive, caring, never robotic.
+Response Length: Concise, strictly 1 to 2 short sentences per turn, strictly optimized for audio speech (no markdown, no bullets, no symbols, no emoji).
+Every response must be entirely in spoken English.`,
+            toast: 'Switched persona to English Only mode',
+          },
+        };
+
+        function updatePersonaDisplay(mode) {
+          const config = PERSONA_CONFIGS[mode] || PERSONA_CONFIGS.bilingual;
+          if (headerModeBadge) {
+            headerModeBadge.textContent = config.badge;
+            headerModeBadge.className = `text-[10px] px-2 py-0.5 rounded-full font-medium border ${config.badgeClass}`;
+          }
+          if (headerPersonaDesc) {
+            headerPersonaDesc.textContent = config.desc;
+          }
+          if (footerModeText) {
+            footerModeText.textContent = config.label;
+          }
+        }
+
+        function initPersonaMode() {
+          const storedMode = localStorage.getItem('riya_persona_mode') || 'bilingual';
+          if (PERSONA_CONFIGS[storedMode]) {
+            state.personaMode = storedMode;
+            personaModeSelect.value = storedMode;
+            updatePersonaDisplay(storedMode);
+          }
+        }
+
+        personaModeSelect.addEventListener('change', (e) => {
+          const newMode = e.target.value;
+          if (!PERSONA_CONFIGS[newMode]) return;
+
+          state.personaMode = newMode;
+          localStorage.setItem('riya_persona_mode', newMode);
+          updatePersonaDisplay(newMode);
+          showToast(PERSONA_CONFIGS[newMode].toast, '🌐');
+
+          // If session is already connected, dynamically steer the active session
+          if (state.isConnected && state.ws && state.ws.readyState === WebSocket.OPEN) {
+            const steerMsg = {
+              client_content: {
+                turns: [
+                  {
+                    role: 'user',
+                    parts: [
+                      {
+                        text: `[Persona Instruction Update]: The user has switched the conversation mode to "${PERSONA_CONFIGS[newMode].label}". From this turn onward, adhere strictly to the following instructions: ${PERSONA_CONFIGS[newMode].systemInstruction}. Please acknowledge gently in 1 short sentence in this language mode.`,
+                      },
+                    ],
+                  },
+                ],
+                turn_complete: true,
+              },
+            };
+            state.ws.send(JSON.stringify(steerMsg));
+          }
+        });
+
+        // --- API KEY STORAGE & INITIALIZATION ---
+        async function initApiKey() {
+          const storedKey = localStorage.getItem('riya_gemini_api_key') || '';
+          if (storedKey) {
+            state.apiKey = storedKey;
+            apiKeyInput.value = storedKey;
+            saveKeyBtnText.textContent = 'Saved ✓';
+            saveKeyBtn.classList.add('text-emerald-400');
+            return;
+          }
+
+          // Check if server environment has GEMINI_API_KEY
+          try {
+            const res = await fetch('/api/key');
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.key) {
+                state.apiKey = data.key;
+                apiKeyInput.value = data.key;
+                saveKeyBtnText.textContent = 'Auto ✓';
+                saveKeyBtn.classList.add('text-emerald-400');
+              }
+            }
+          } catch (e) {}
+        }
+
+        saveKeyBtn.addEventListener('click', () => {
+          const val = apiKeyInput.value.trim();
+          if (!val) {
+            localStorage.removeItem('riya_gemini_api_key');
+            state.apiKey = '';
+            showToast('API Key cleared', 'ℹ️');
+            saveKeyBtnText.textContent = 'Save';
+            saveKeyBtn.classList.remove('text-emerald-400');
+            return;
+          }
+          state.apiKey = val;
+          localStorage.setItem('riya_gemini_api_key', val);
+          showToast('API Key saved securely in browser', '✅');
+          saveKeyBtnText.textContent = 'Saved ✓';
+          saveKeyBtn.classList.add('text-emerald-400');
+        });
+
+        apiKeyInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') saveKeyBtn.click();
+        });
+
+        toggleKeyVisibility.addEventListener('click', () => {
+          if (apiKeyInput.type === 'password') {
+            apiKeyInput.type = 'text';
+            eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path>`;
+          } else {
+            apiKeyInput.type = 'password';
+            eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>`;
+          }
+        });
+
+        // --- TOAST NOTIFICATIONS ---
+        let toastTimeout = null;
+        function showToast(msg, icon = '✨') {
+          toastMessage.textContent = msg;
+          toastIcon.textContent = icon;
+          toastNotification.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+          if (toastTimeout) clearTimeout(toastTimeout);
+          toastTimeout = setTimeout(() => {
+            toastNotification.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+          }, 3200);
+        }
+
+        // --- UI STATUS UPDATES ---
+        function setStatus(statusKey, customMessage) {
+          statusIndicator.className = 'w-2.5 h-2.5 rounded-full';
+          statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium glass-panel border transition-all duration-300 shadow-md';
+
+          switch (statusKey) {
+            case 'disconnected':
+              statusIndicator.classList.add('bg-slate-500');
+              statusBadge.classList.add('border-slate-700/60', 'text-slate-300');
+              statusText.textContent = customMessage || 'Disconnected • Ready to connect';
+              headerLiveDot.classList.add('hidden');
+              headerLiveDotStatic.classList.add('hidden');
+              glowRingOuter.className = 'absolute w-72 h-72 md:w-80 md:h-80 rounded-full transition-all duration-700 pointer-events-none opacity-20 bg-gradient-to-r from-riya-600 via-indigo-600 to-pink-500 blur-2xl';
+              glowRingInner.className = 'absolute w-56 h-56 md:w-64 md:h-64 rounded-full transition-all duration-500 pointer-events-none opacity-20 bg-riya-500 blur-xl';
+              break;
+
+            case 'connecting':
+              statusIndicator.classList.add('bg-amber-400', 'animate-ping');
+              statusBadge.classList.add('border-amber-500/40', 'text-amber-200');
+              statusText.textContent = customMessage || 'Connecting to Riya (Gemini Live)...';
+              headerLiveDot.classList.remove('hidden');
+              headerLiveDotStatic.classList.remove('hidden');
+              glowRingOuter.className = 'absolute w-72 h-72 md:w-80 md:h-80 rounded-full transition-all duration-700 pointer-events-none opacity-40 bg-amber-500 blur-2xl active-glow-ripple';
+              break;
+
+            case 'listening':
+              statusIndicator.classList.add('bg-emerald-400');
+              statusBadge.classList.add('border-emerald-500/40', 'text-emerald-200');
+              statusText.textContent = customMessage || 'Listening to you...';
+              headerLiveDot.classList.remove('hidden');
+              headerLiveDotStatic.classList.remove('hidden');
+              glowRingOuter.className = 'absolute w-72 h-72 md:w-80 md:h-80 rounded-full transition-all duration-500 pointer-events-none opacity-30 bg-emerald-500 blur-2xl';
+              glowRingInner.className = 'absolute w-56 h-56 md:w-64 md:h-64 rounded-full transition-all duration-500 pointer-events-none opacity-40 bg-teal-400 blur-xl active-glow-ripple';
+              break;
+
+            case 'speaking':
+              statusIndicator.classList.add('bg-riya-400', 'animate-pulse');
+              statusBadge.classList.add('border-riya-500/50', 'text-riya-200');
+              statusText.textContent = customMessage || 'Riya Speaking...';
+              headerLiveDot.classList.remove('hidden');
+              headerLiveDotStatic.classList.remove('hidden');
+              glowRingOuter.className = 'absolute w-72 h-72 md:w-80 md:h-80 rounded-full transition-all duration-500 pointer-events-none opacity-70 bg-gradient-to-r from-riya-600 via-fuchsia-500 to-indigo-600 blur-2xl active-glow-ripple';
+              glowRingInner.className = 'absolute w-56 h-56 md:w-64 md:h-64 rounded-full transition-all duration-500 pointer-events-none opacity-60 bg-riya-500 blur-xl';
+              break;
+
+            case 'interrupted':
+              statusIndicator.classList.add('bg-amber-400');
+              statusBadge.classList.add('border-amber-500/50', 'text-amber-200');
+              statusText.textContent = customMessage || 'Interrupted • Listening to you';
+              glowRingOuter.className = 'absolute w-72 h-72 md:w-80 md:h-80 rounded-full transition-all duration-300 pointer-events-none opacity-40 bg-amber-500 blur-2xl';
+              break;
+
+            case 'error':
+              statusIndicator.classList.add('bg-rose-500');
+              statusBadge.classList.add('border-rose-500/50', 'text-rose-200');
+              statusText.textContent = customMessage || 'Connection Error';
+              headerLiveDot.classList.add('hidden');
+              headerLiveDotStatic.classList.add('hidden');
+              glowRingOuter.className = 'absolute w-72 h-72 md:w-80 md:h-80 rounded-full transition-all duration-700 pointer-events-none opacity-30 bg-rose-600 blur-2xl';
+              break;
+          }
+        }
+
+        // --- TRANSCRIPT HANDLING ---
+        let currentRiyaMessageElement = null;
+
+        function appendTranscript(sender, text, isPartial = false) {
+          if (!text || !text.trim()) return;
+
+          if (sender === 'riya' && isPartial && currentRiyaMessageElement) {
+            const p = currentRiyaMessageElement.querySelector('.msg-content');
+            if (p) p.textContent += text;
+            transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+            return;
+          }
+
+          const isUser = sender === 'user';
+          const msgDiv = document.createElement('div');
+          msgDiv.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+
+          const avatar = document.createElement('div');
+          avatar.className = `w-7 h-7 rounded-lg flex items-center justify-center text-xs shrink-0 mt-0.5 ${
+            isUser
+              ? 'bg-indigo-600/30 border border-indigo-500/40 text-indigo-300'
+              : 'bg-riya-500/20 border border-riya-500/30 text-riya-300'
+          }`;
+          avatar.textContent = isUser ? '🎙️' : '🌸';
+
+          const bubble = document.createElement('div');
+          bubble.className = `max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
+            isUser
+              ? 'bg-gradient-to-r from-indigo-950/70 to-slate-900 border border-indigo-700/40 text-slate-100 rounded-tr-sm'
+              : 'bg-slate-900/80 border border-slate-700/40 text-slate-200 rounded-tl-sm'
+          }`;
+
+          const header = document.createElement('div');
+          header.className = `flex items-center gap-2 mb-1 text-[10px] text-slate-400 ${isUser ? 'justify-end' : 'justify-between'}`;
+
+          const name = document.createElement('span');
+          name.className = `font-semibold ${isUser ? 'text-indigo-300' : 'text-riya-300'}`;
+          name.textContent = isUser ? 'You' : 'Riya';
+
+          const time = document.createElement('span');
+          time.className = 'text-[9px] text-slate-500';
+          const now = new Date();
+          time.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+          header.appendChild(name);
+          header.appendChild(time);
+
+          const content = document.createElement('p');
+          content.className = 'msg-content leading-relaxed';
+          content.textContent = text;
+
+          bubble.appendChild(header);
+          bubble.appendChild(content);
+
+          msgDiv.appendChild(avatar);
+          msgDiv.appendChild(bubble);
+
+          transcriptContainer.appendChild(msgDiv);
+          transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+
+          state.transcriptCount++;
+          transcriptCount.textContent = `${state.transcriptCount} messages`;
+
+          if (sender === 'riya') {
+            currentRiyaMessageElement = msgDiv;
+          } else {
+            currentRiyaMessageElement = null;
+          }
+        }
+
+        copyTranscriptBtn.addEventListener('click', () => {
+          const messages = Array.from(transcriptContainer.querySelectorAll('.msg-content')).map((el) => {
+            const sender = el.parentElement.querySelector('span').textContent;
+            return `${sender}: ${el.textContent}`;
+          });
+          if (messages.length === 0) {
+            showToast('No transcript to copy', 'ℹ️');
+            return;
+          }
+          navigator.clipboard.writeText(messages.join('\n\n'))
+            .then(() => showToast('Transcript copied to clipboard', '📋'))
+            .catch(() => showToast('Failed to copy', '⚠️'));
+        });
+
+        clearTranscriptBtn.addEventListener('click', () => {
+          transcriptContainer.innerHTML = '';
+          currentRiyaMessageElement = null;
+          state.transcriptCount = 0;
+          transcriptCount.textContent = '0 messages';
+          showToast('Transcript cleared', '🗑️');
+        });
+
+        // Quick starter prompts
+        document.querySelectorAll('.starter-chip').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const text = btn.getAttribute('data-text');
+            if (state.isConnected) {
+              sendTextMessageToGemini(text);
+            } else {
+              textTurnInput.value = text;
+              showToast('Connect first, or click Start Conversation', '💡');
+            }
+          });
+        });
+
+        // Send Text turn to Gemini Live
+        sendTextTurnBtn.addEventListener('click', () => {
+          const text = textTurnInput.value.trim();
+          if (!text) return;
+          if (!state.isConnected) {
+            showToast('Please start the conversation first', '⚠️');
+            return;
+          }
+          sendTextMessageToGemini(text);
+          textTurnInput.value = '';
+        });
+
+        textTurnInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') sendTextTurnBtn.click();
+        });
+
+        function sendTextMessageToGemini(text) {
+          if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
+            showToast('Session not active', '⚠️');
+            return;
+          }
+          appendTranscript('user', text);
+          const clientContentMsg = {
+            client_content: {
+              turns: [
+                {
+                  role: 'user',
+                  parts: [{ text: text }],
+                },
+              ],
+              turn_complete: true,
+            },
+          };
+          state.ws.send(JSON.stringify(clientContentMsg));
+        }
+
+        // --- AUDIO CAPTURE AND PCM CONVERSION ---
+        function resampleTo16k(inputData, inputSampleRate) {
+          if (inputSampleRate === 16000) return inputData;
+          const ratio = inputSampleRate / 16000;
+          const newLength = Math.round(inputData.length / ratio);
+          const result = new Float32Array(newLength);
+          for (let i = 0; i < newLength; i++) {
+            const origIndex = i * ratio;
+            const indexFloor = Math.floor(origIndex);
+            const indexCeil = Math.min(indexFloor + 1, inputData.length - 1);
+            const fraction = origIndex - indexFloor;
+            result[i] = inputData[indexFloor] * (1 - fraction) + inputData[indexCeil] * fraction;
+          }
+          return result;
+        }
+
+        function floatTo16BitPCM(float32Array) {
+          const buffer = new ArrayBuffer(float32Array.length * 2);
+          const view = new DataView(buffer);
+          for (let i = 0; i < float32Array.length; i++) {
+            let s = Math.max(-1, Math.min(1, float32Array[i]));
+            view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true); // Little-endian 16-bit PCM
+          }
+          return buffer;
+        }
+
+        function arrayBufferToBase64(buffer) {
+          let binary = '';
+          const bytes = new Uint8Array(buffer);
+          const len = bytes.byteLength;
+          const chunkSize = 16384;
+          for (let i = 0; i < len; i += chunkSize) {
+            binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+          }
+          return btoa(binary);
+        }
+
+        // --- AUDIO PLAYBACK (24kHz PCM from Gemini) ---
+        function base64ToFloat32Array(base64) {
+          const binaryString = atob(base64);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const view = new DataView(bytes.buffer);
+          const sampleCount = Math.floor(len / 2);
+          const float32 = new Float32Array(sampleCount);
+          for (let i = 0; i < sampleCount; i++) {
+            const int16 = view.getInt16(i * 2, true); // Little-endian
+            float32[i] = int16 < 0 ? int16 / 32768.0 : int16 / 32767.0;
+          }
+          return float32;
+        }
+
+        function play24kPCMChunk(base64Data) {
+          if (!state.outputAudioCtx || state.outputAudioCtx.state === 'closed') {
+            state.outputAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+          }
+          if (state.outputAudioCtx.state === 'suspended') {
+            state.outputAudioCtx.resume();
+          }
+
+          if (!state.outputAnalyser) {
+            state.outputAnalyser = state.outputAudioCtx.createAnalyser();
+            state.outputAnalyser.fftSize = 256;
+          }
+
+          const float32Data = base64ToFloat32Array(base64Data);
+          if (float32Data.length === 0) return;
+
+          const audioBuffer = state.outputAudioCtx.createBuffer(1, float32Data.length, 24000);
+          audioBuffer.copyToChannel(float32Data, 0);
+
+          const source = state.outputAudioCtx.createBufferSource();
+          source.buffer = audioBuffer;
+
+          source.connect(state.outputAnalyser);
+          state.outputAnalyser.connect(state.outputAudioCtx.destination);
+
+          const currentTime = state.outputAudioCtx.currentTime;
+          if (state.nextOutputTime < currentTime) {
+            state.nextOutputTime = currentTime + 0.03; // small 30ms jitter buffer
+          }
+
+          source.start(state.nextOutputTime);
+          state.nextOutputTime += audioBuffer.duration;
+
+          state.activeBufferSources.push(source);
+          setRiyaSpeaking(true);
+
+          source.onended = () => {
+            const idx = state.activeBufferSources.indexOf(source);
+            if (idx !== -1) state.activeBufferSources.splice(idx, 1);
+            if (state.activeBufferSources.length === 0 && state.outputAudioCtx.currentTime >= state.nextOutputTime - 0.05) {
+              setRiyaSpeaking(false);
+            }
+          };
+        }
+
+        function stopAllRiyaAudio(reason = 'barge-in') {
+          for (const src of state.activeBufferSources) {
+            try {
+              src.stop();
+              src.disconnect();
+            } catch (e) {}
+          }
+          state.activeBufferSources = [];
+          if (state.outputAudioCtx) {
+            state.nextOutputTime = state.outputAudioCtx.currentTime;
+          }
+          setRiyaSpeaking(false);
+        }
+
+        function setRiyaSpeaking(isSpeaking) {
+          if (state.isRiyaSpeaking === isSpeaking) return;
+          state.isRiyaSpeaking = isSpeaking;
+          if (isSpeaking) {
+            setStatus('speaking');
+          } else if (state.isConnected) {
+            setStatus('listening');
+          }
+        }
+
+        // --- BARGE-IN (INTERRUPTION) HANDLER ---
+        function triggerBargeIn(sourceDesc = 'User spoken') {
+          if (state.isRiyaSpeaking || state.activeBufferSources.length > 0) {
+            stopAllRiyaAudio('barge-in');
+            setStatus('interrupted');
+            showToast('Barge-in: Stopped Riya to listen to you', '⚡');
+            currentRiyaMessageElement = null;
+            setTimeout(() => {
+              if (state.isConnected && !state.isRiyaSpeaking) {
+                setStatus('listening');
+              }
+            }, 600);
+          }
+        }
+
+        bargeInBtn.addEventListener('click', () => {
+          triggerBargeIn('Manual Interrupt Button');
+        });
+
+        // --- WEBSOCKET CONNECTION & PROTOCOL ---
+        const SUPPORTED_LIVE_MODELS = [
+          'models/gemini-3.8-live',
+          'models/gemini-2.5-flash-native-audio-preview-09-2025',
+        ];
+        let currentModelIdx = 0;
+
+        async function connectLiveWebSocket() {
+          let key = state.apiKey || apiKeyInput.value.trim();
+          if (!key) {
+            try {
+              const res = await fetch('/api/key');
+              if (res.ok) {
+                const data = await res.json();
+                if (data && data.key) {
+                  key = data.key;
+                  state.apiKey = key;
+                  apiKeyInput.value = key;
+                  saveKeyBtnText.textContent = 'Auto ✓';
+                  saveKeyBtn.classList.add('text-emerald-400');
+                }
+              }
+            } catch (e) {}
+          }
+
+          if (!key) {
+            showToast('Please enter your Google AI Studio API Key first', '⚠️');
+            apiKeyInput.focus();
+            return;
+          }
+          state.apiKey = key;
+          localStorage.setItem('riya_gemini_api_key', key);
+
+          state.isConnecting = true;
+          setStatus('connecting');
+          toggleSessionBtn.classList.add('opacity-80');
+          btnText.textContent = 'Connecting...';
+
+          const chosenModel = SUPPORTED_LIVE_MODELS[currentModelIdx] || 'models/gemini-3.8-live';
+          const headerModelBadge = document.getElementById('headerModelBadge');
+          if (headerModelBadge) {
+            headerModelBadge.textContent = chosenModel.replace('models/', '');
+          }
+
+          const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${encodeURIComponent(key)}`;
+
+          try {
+            state.ws = new WebSocket(wsUrl);
+          } catch (err) {
+            handleConnectionError('Could not initialize WebSocket: ' + err.message);
+            return;
+          }
+
+          state.ws.onopen = async () => {
+            // Send Setup Payload as first message
+            const setupMessage = {
+              setup: {
+                model: chosenModel,
+                generationConfig: {
+                  responseModalities: ['AUDIO'],
+                  speechConfig: {
+                    voiceConfig: {
+                      prebuiltVoiceConfig: {
+                        voiceName: 'Aoede',
+                      },
+                    },
+                  },
+                },
+                systemInstruction: {
+                  parts: [
+                    {
+                      text: (PERSONA_CONFIGS[state.personaMode] || PERSONA_CONFIGS.bilingual).systemInstruction,
+                    },
+                  ],
+                },
+              },
+            };
+
+            state.ws.send(JSON.stringify(setupMessage));
+          };
+
+          state.ws.onmessage = async (event) => {
+            let msg;
+            try {
+              if (event.data instanceof Blob) {
+                const text = await event.data.text();
+                msg = JSON.parse(text);
+              } else {
+                msg = JSON.parse(event.data);
+              }
+            } catch (err) {
+              console.error('Failed to parse WebSocket message', err);
+              return;
+            }
+
+            // Setup confirmation
+            if (msg.setupComplete || msg.setup_complete) {
+              state.isConnected = true;
+              state.isConnecting = false;
+              setStatus('listening', 'Connected to Riya! Speak in Tamil or English');
+              updateButtonsForActiveSession(true);
+              startMicAudioStream();
+              startSpeechRecognition();
+              showToast('Connected to Riya live!', '🌸');
+              return;
+            }
+
+            // Server Content (Audio / Text / Interruption)
+            const serverContent = msg.serverContent || msg.server_content;
+            if (serverContent) {
+              // Interruption from server
+              if (serverContent.interrupted) {
+                triggerBargeIn('Server Interruption Event');
+              }
+
+              // Model turn content
+              const modelTurn = serverContent.modelTurn || serverContent.model_turn;
+              if (modelTurn && modelTurn.parts) {
+                for (const part of modelTurn.parts) {
+                  // Audio part
+                  const inlineData = part.inlineData || part.inline_data;
+                  if (inlineData && inlineData.data) {
+                    play24kPCMChunk(inlineData.data);
+                  }
+
+                  // Text transcription / speech part
+                  if (part.text) {
+                    appendTranscript('riya', part.text, true);
+                  }
+                }
+              }
+
+              // Turn complete
+              if (serverContent.turnComplete || serverContent.turn_complete) {
+                currentRiyaMessageElement = null;
+              }
+            }
+          };
+
+          state.ws.onerror = (err) => {
+            console.error('WebSocket Error:', err);
+            handleConnectionError('WebSocket network error. Check API Key or connection.');
+          };
+
+          state.ws.onclose = (event) => {
+            console.log('WebSocket closed:', event.code, event.reason);
+            const wasConnected = state.isConnected;
+            disconnectSession(false);
+
+            if (event.code === 1000) {
+              setStatus('disconnected', 'Session ended normally');
+              return;
+            }
+
+            // If closed during setup and another supported model is available, auto-retry
+            if (!wasConnected && currentModelIdx < SUPPORTED_LIVE_MODELS.length - 1) {
+              currentModelIdx++;
+              const nextModel = SUPPORTED_LIVE_MODELS[currentModelIdx].replace('models/', '');
+              console.log('Retrying with alternative live model:', nextModel);
+              setStatus('connecting', `Retrying with ${nextModel}...`);
+              setTimeout(() => {
+                connectLiveWebSocket();
+              }, 400);
+              return;
+            }
+
+            const errorDetail = event.reason ? `: ${event.reason}` : '';
+            if (event.code === 1008 || event.code === 1006) {
+              setStatus('error', `Connection closed (${event.code})${errorDetail}`);
+              showToast(`Connection closed (${event.code})${errorDetail}`, '❌');
+            } else {
+              setStatus('error', `Connection closed (${event.code})${errorDetail}`);
+            }
+          };
+        }
+
+        function handleConnectionError(msg) {
+          state.isConnecting = false;
+          state.isConnected = false;
+          setStatus('error', msg);
+          showToast(msg, '❌');
+          updateButtonsForActiveSession(false);
+          stopMicAudioStream();
+          stopSpeechRecognition();
+        }
+
+        // --- MICROPHONE CAPTURE STREAM ---
+        async function startMicAudioStream() {
+          try {
+            state.micMediaStream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                channelCount: 1,
+                sampleRate: 16000,
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+              },
+            });
+
+            state.inputAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (state.inputAudioCtx.state === 'suspended') {
+              await state.inputAudioCtx.resume();
+            }
+
+            state.inputAnalyser = state.inputAudioCtx.createAnalyser();
+            state.inputAnalyser.fftSize = 256;
+
+            const source = state.inputAudioCtx.createMediaStreamSource(state.micMediaStream);
+            source.connect(state.inputAnalyser);
+
+            // ScriptProcessorNode for streaming PCM chunks
+            const bufferSize = 2048;
+            state.scriptProcessor = state.inputAudioCtx.createScriptProcessor(bufferSize, 1, 1);
+
+            state.scriptProcessor.onaudioprocess = (e) => {
+              if (!state.isConnected || state.isMuted) return;
+
+              const inputChannelData = e.inputBuffer.getChannelData(0);
+
+              // Calculate RMS volume for barge-in detection & visualizer meter
+              let sum = 0;
+              for (let i = 0; i < inputChannelData.length; i++) {
+                sum += inputChannelData[i] * inputChannelData[i];
+              }
+              const rms = Math.sqrt(sum / inputChannelData.length);
+              state.micLevel = Math.min(1, rms * 6);
+
+              // Client-side VAD Barge-in: If user speaks while Riya is speaking
+              if (state.isRiyaSpeaking && rms > 0.04) {
+                state.consecutiveUserSpeechFrames++;
+                if (state.consecutiveUserSpeechFrames >= 2) {
+                  triggerBargeIn('User spoke over Riya');
+                  state.consecutiveUserSpeechFrames = 0;
+                }
+              } else {
+                state.consecutiveUserSpeechFrames = 0;
+              }
+
+              // Resample to 16kHz if audioContext sample rate differs
+              const resampled16k = resampleTo16k(inputChannelData, state.inputAudioCtx.sampleRate);
+              const pcm16Buffer = floatTo16BitPCM(resampled16k);
+              const base64Pcm = arrayBufferToBase64(pcm16Buffer);
+
+              // Send real-time audio chunk upstream
+              if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+                const realtimeChunkMsg = {
+                  realtime_input: {
+                    media_chunks: [
+                      {
+                        mime_type: 'audio/pcm;rate=16000',
+                        data: base64Pcm,
+                      },
+                    ],
+                  },
+                };
+                state.ws.send(JSON.stringify(realtimeChunkMsg));
+              }
+            };
+
+            source.connect(state.scriptProcessor);
+            // Connect to destination to keep audio process active
+            state.scriptProcessor.connect(state.inputAudioCtx.destination);
+          } catch (err) {
+            console.error('Error accessing microphone:', err);
+            showToast('Microphone access denied or failed: ' + err.message, '🎙️');
+            setStatus('error', 'Microphone permission required');
+          }
+        }
+
+        function stopMicAudioStream() {
+          if (state.scriptProcessor) {
+            try {
+              state.scriptProcessor.disconnect();
+            } catch (e) {}
+            state.scriptProcessor = null;
+          }
+          if (state.micMediaStream) {
+            state.micMediaStream.getTracks().forEach((t) => t.stop());
+            state.micMediaStream = null;
+          }
+          if (state.inputAudioCtx) {
+            try {
+              state.inputAudioCtx.close();
+            } catch (e) {}
+            state.inputAudioCtx = null;
+          }
+          state.micLevel = 0;
+        }
+
+        // --- WEB SPEECH RECOGNITION (PASSIVE TRANSCRIPTION FOR USER) ---
+        function startSpeechRecognition() {
+          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+          if (!SpeechRecognition) return;
+
+          try {
+            state.speechRecognition = new SpeechRecognition();
+            state.speechRecognition.continuous = true;
+            state.speechRecognition.interimResults = false;
+            state.speechRecognition.lang = 'ta-IN'; // Tamil (India) or English friendly
+
+            state.speechRecognition.onresult = (event) => {
+              for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                  const transcript = event.results[i][0].transcript.trim();
+                  if (transcript) {
+                    appendTranscript('user', transcript);
+                  }
+                }
+              }
+            };
+
+            state.speechRecognition.onerror = (e) => {
+              // Ignore benign errors like 'no-speech'
+              if (e.error !== 'no-speech') {
+                console.log('Speech recognition notice:', e.error);
+              }
+            };
+
+            state.speechRecognition.onend = () => {
+              if (state.isConnected && state.speechRecognition) {
+                try {
+                  state.speechRecognition.start();
+                } catch (e) {}
+              }
+            };
+
+            state.speechRecognition.start();
+          } catch (e) {
+            console.log('Passive speech recognition not initialized:', e);
+          }
+        }
+
+        function stopSpeechRecognition() {
+          if (state.speechRecognition) {
+            try {
+              state.speechRecognition.stop();
+            } catch (e) {}
+            state.speechRecognition = null;
+          }
+        }
+
+        // --- SESSION TOGGLING ---
+        function updateButtonsForActiveSession(active) {
+          toggleMuteBtn.disabled = !active;
+          bargeInBtn.disabled = !active;
+
+          if (active) {
+            toggleSessionBtn.classList.remove('from-riya-600', 'to-indigo-600');
+            toggleSessionBtn.classList.add('from-rose-600', 'via-red-600', 'to-rose-700', 'hover:from-rose-500', 'hover:to-red-500', 'shadow-rose-600/40');
+            btnText.textContent = 'End Conversation';
+            btnIcon.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+          } else {
+            toggleSessionBtn.classList.remove('from-rose-600', 'via-red-600', 'to-rose-700', 'hover:from-rose-500', 'hover:to-red-500', 'shadow-rose-600/40', 'opacity-80');
+            toggleSessionBtn.classList.add('from-riya-600', 'via-fuchsia-600', 'to-indigo-600', 'hover:from-riya-500', 'hover:to-indigo-500', 'shadow-riya-600/30');
+            btnText.textContent = 'Start Conversation';
+            btnIcon.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>`;
+          }
+        }
+
+        function disconnectSession(cleanStatus = true) {
+          state.isConnected = false;
+          state.isConnecting = false;
+          state.isListening = false;
+          setRiyaSpeaking(false);
+          stopAllRiyaAudio('disconnect');
+          stopMicAudioStream();
+          stopSpeechRecognition();
+
+          if (state.ws) {
+            try {
+              state.ws.close();
+            } catch (e) {}
+            state.ws = null;
+          }
+
+          updateButtonsForActiveSession(false);
+          if (cleanStatus) setStatus('disconnected');
+        }
+
+        toggleSessionBtn.addEventListener('click', () => {
+          if (state.isConnected || state.isConnecting) {
+            disconnectSession(true);
+            showToast('Conversation ended', '👋');
+          } else {
+            connectLiveWebSocket();
+          }
+        });
+
+        // Click on Center Orb also toggles session
+        orbCore.addEventListener('click', () => {
+          toggleSessionBtn.click();
+        });
+
+        // Toggle Mute
+        toggleMuteBtn.addEventListener('click', () => {
+          state.isMuted = !state.isMuted;
+          if (state.isMuted) {
+            muteBtnText.textContent = 'Unmute';
+            toggleMuteBtn.classList.add('border-rose-500/50', 'text-rose-300');
+            muteIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>`;
+            showToast('Microphone muted', '🔇');
+          } else {
+            muteBtnText.textContent = 'Mute';
+            toggleMuteBtn.classList.remove('border-rose-500/50', 'text-rose-300');
+            muteIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>`;
+            showToast('Microphone unmuted', '🎙️');
+          }
+        });
+
+        // --- ANIMATED AUDIO VISUALIZER (CANVAS) ---
+        let visualizerAngle = 0;
+        const micFreqData = new Uint8Array(64);
+        const riyaFreqData = new Uint8Array(64);
+
+        function renderVisualizer() {
+          requestAnimationFrame(renderVisualizer);
+
+          const width = visualizerCanvas.width;
+          const height = visualizerCanvas.height;
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const baseRadius = 80;
+
+          canvasCtx.clearRect(0, 0, width, height);
+
+          // Get frequency data
+          let micEnergy = 0;
+          if (state.inputAnalyser && state.isConnected && !state.isMuted) {
+            state.inputAnalyser.getByteFrequencyData(micFreqData);
+            let sum = 0;
+            for (let i = 0; i < 32; i++) sum += micFreqData[i];
+            micEnergy = sum / (32 * 255);
+          }
+
+          let riyaEnergy = 0;
+          if (state.outputAnalyser && state.isRiyaSpeaking) {
+            state.outputAnalyser.getByteFrequencyData(riyaFreqData);
+            let sum = 0;
+            for (let i = 0; i < 32; i++) sum += riyaFreqData[i];
+            riyaEnergy = sum / (32 * 255);
+          }
+
+          state.riyaLevel = Math.min(1, riyaEnergy * 2.2);
+
+          // Update level bars
+          micLevelBar.style.width = `${Math.min(100, state.micLevel * 100)}%`;
+          riyaLevelBar.style.width = `${Math.min(100, state.riyaLevel * 100)}%`;
+
+          visualizerAngle += 0.02 + (state.isRiyaSpeaking ? 0.04 : 0);
+
+          // Draw Outer Fluid Particle/Wave Spectrum
+          const numBars = 48;
+          const angleStep = (Math.PI * 2) / numBars;
+
+          for (let i = 0; i < numBars; i++) {
+            const angle = i * angleStep + visualizerAngle;
+            let magnitude = 0;
+
+            if (state.isRiyaSpeaking) {
+              const freqVal = riyaFreqData[i % riyaFreqData.length] / 255;
+              magnitude = 12 + freqVal * 45;
+            } else if (state.isConnected) {
+              const freqVal = micFreqData[i % micFreqData.length] / 255;
+              magnitude = 6 + freqVal * 32;
+            } else {
+              magnitude = 3 + Math.sin(visualizerAngle * 2 + i) * 3;
+            }
+
+            const r1 = baseRadius + 14;
+            const r2 = r1 + magnitude;
+
+            const x1 = centerX + Math.cos(angle) * r1;
+            const y1 = centerY + Math.sin(angle) * r1;
+            const x2 = centerX + Math.cos(angle) * r2;
+            const y2 = centerY + Math.sin(angle) * r2;
+
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(x1, y1);
+            canvasCtx.lineTo(x2, y2);
+            canvasCtx.lineWidth = 2.4;
+            canvasCtx.lineCap = 'round';
+
+            if (state.isRiyaSpeaking) {
+              canvasCtx.strokeStyle = `rgba(217, 70, 239, ${0.4 + (magnitude / 50) * 0.6})`;
+            } else if (state.isConnected) {
+              canvasCtx.strokeStyle = `rgba(16, 185, 129, ${0.3 + (magnitude / 40) * 0.7})`;
+            } else {
+              canvasCtx.strokeStyle = 'rgba(99, 102, 241, 0.25)';
+            }
+            canvasCtx.stroke();
+          }
+
+          // Draw Inner Harmonic Ring
+          canvasCtx.beginPath();
+          const ringRadius = baseRadius + 10 + (state.isRiyaSpeaking ? riyaEnergy * 14 : micEnergy * 10);
+          canvasCtx.arc(centerX, centerY, ringRadius, 0, Math.PI * 2);
+          canvasCtx.lineWidth = 1.5;
+          if (state.isRiyaSpeaking) {
+            canvasCtx.strokeStyle = 'rgba(236, 72, 153, 0.6)';
+          } else if (state.isConnected) {
+            canvasCtx.strokeStyle = 'rgba(20, 184, 166, 0.5)';
+          } else {
+            canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+          }
+          canvasCtx.stroke();
+        }
+
+        // --- BOOTSTRAP ---
+        initApiKey();
+        initPersonaMode();
+        renderVisualizer();
+      })();
+    </script>
+  </body>
+</html>
