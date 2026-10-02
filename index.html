@@ -882,15 +882,16 @@ Every response must be entirely in spoken English.`,
             return;
           }
           appendTranscript('user', text);
+          ensureOutputAudioContext();
           const clientContentMsg = {
-            client_content: {
+            clientContent: {
               turns: [
                 {
                   role: 'user',
                   parts: [{ text: text }],
                 },
               ],
-              turn_complete: true,
+              turnComplete: true,
             },
           };
           state.ws.send(JSON.stringify(clientContentMsg));
@@ -934,6 +935,25 @@ Every response must be entirely in spoken English.`,
         }
 
         // --- AUDIO PLAYBACK (24kHz PCM from Gemini) ---
+        function ensureOutputAudioContext() {
+          try {
+            if (!state.outputAudioCtx || state.outputAudioCtx.state === 'closed') {
+              state.outputAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (state.outputAudioCtx.state === 'suspended') {
+              state.outputAudioCtx.resume();
+            }
+            if (!state.outputAnalyser && state.outputAudioCtx) {
+              state.outputAnalyser = state.outputAudioCtx.createAnalyser();
+              state.outputAnalyser.fftSize = 256;
+            }
+            return state.outputAudioCtx;
+          } catch (e) {
+            console.error('Error creating output AudioContext:', e);
+            return null;
+          }
+        }
+
         function base64ToFloat32Array(base64) {
           const binaryString = atob(base64);
           const len = binaryString.length;
@@ -952,37 +972,26 @@ Every response must be entirely in spoken English.`,
         }
 
         function play24kPCMChunk(base64Data) {
-          if (!state.outputAudioCtx || state.outputAudioCtx.state === 'closed') {
-            state.outputAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
-          }
-          if (state.outputAudioCtx.state === 'suspended') {
-            state.outputAudioCtx.resume();
-          }
-
-          if (!state.outputAnalyser) {
-            state.outputAnalyser = state.outputAudioCtx.createAnalyser();
-            state.outputAnalyser.fftSize = 256;
-          }
+          const ctx = ensureOutputAudioContext();
+          if (!ctx) return;
 
           const float32Data = base64ToFloat32Array(base64Data);
           if (float32Data.length === 0) return;
 
-          const audioBuffer = state.outputAudioCtx.createBuffer(1, float32Data.length, 24000);
+          // The model streams 24,000Hz mono audio
+          const audioBuffer = ctx.createBuffer(1, float32Data.length, 24000);
           audioBuffer.copyToChannel(float32Data, 0);
 
-          const source = state.outputAudioCtx.createBufferSource();
+          const source = ctx.createBufferSource();
           source.buffer = audioBuffer;
 
           source.connect(state.outputAnalyser);
-          state.outputAnalyser.connect(state.outputAudioCtx.destination);
+          state.outputAnalyser.connect(ctx.destination);
 
-          const currentTime = state.outputAudioCtx.currentTime;
-          if (state.nextOutputTime < currentTime) {
-            state.nextOutputTime = currentTime + 0.03; // small 30ms jitter buffer
-          }
-
-          source.start(state.nextOutputTime);
-          state.nextOutputTime += audioBuffer.duration;
+          const now = ctx.currentTime;
+          const startTime = Math.max(state.nextOutputTime, now + 0.02);
+          source.start(startTime);
+          state.nextOutputTime = startTime + audioBuffer.duration;
 
           state.activeBufferSources.push(source);
           setRiyaSpeaking(true);
@@ -990,7 +999,7 @@ Every response must be entirely in spoken English.`,
           source.onended = () => {
             const idx = state.activeBufferSources.indexOf(source);
             if (idx !== -1) state.activeBufferSources.splice(idx, 1);
-            if (state.activeBufferSources.length === 0 && state.outputAudioCtx.currentTime >= state.nextOutputTime - 0.05) {
+            if (state.activeBufferSources.length === 0 && ctx.currentTime >= state.nextOutputTime - 0.05) {
               setRiyaSpeaking(false);
             }
           };
@@ -1025,7 +1034,7 @@ Every response must be entirely in spoken English.`,
           if (state.isRiyaSpeaking || state.activeBufferSources.length > 0) {
             stopAllRiyaAudio('barge-in');
             setStatus('interrupted');
-            showToast('Barge-in: Stopped Riya to listen to you', '⚡');
+            showToast('Stopped Riya to listen to you', '⚡');
             currentRiyaMessageElement = null;
             setTimeout(() => {
               if (state.isConnected && !state.isRiyaSpeaking) {
@@ -1143,6 +1152,32 @@ Every response must be entirely in spoken English.`,
               startMicAudioStream();
               startSpeechRecognition();
               showToast('Connected to Riya live!', '🌸');
+
+              // Automatically have Riya greet the user with spoken audio immediately
+              setTimeout(() => {
+                if (state.isConnected && state.ws && state.ws.readyState === WebSocket.OPEN) {
+                  const initialGreetingMsg = {
+                    clientContent: {
+                      turns: [
+                        {
+                          role: 'user',
+                          parts: [
+                            {
+                              text: state.personaMode === 'tamil'
+                                ? 'Hello Riya! Greet me warmly in spoken Tamil in 1 short sentence.'
+                                : state.personaMode === 'english'
+                                ? 'Hello Riya! Greet me warmly in English in 1 short sentence.'
+                                : 'Hello Riya! Greet me warmly in gentle Tamil and English in 1 short sentence.',
+                            },
+                          ],
+                        },
+                      ],
+                      turnComplete: true,
+                    },
+                  };
+                  state.ws.send(JSON.stringify(initialGreetingMsg));
+                }
+              }, 300);
               return;
             }
 
@@ -1266,17 +1301,6 @@ Every response must be entirely in spoken English.`,
               const rms = Math.sqrt(sum / inputChannelData.length);
               state.micLevel = Math.min(1, rms * 6);
 
-              // Client-side VAD Barge-in: If user speaks while Riya is speaking
-              if (state.isRiyaSpeaking && rms > 0.04) {
-                state.consecutiveUserSpeechFrames++;
-                if (state.consecutiveUserSpeechFrames >= 2) {
-                  triggerBargeIn('User spoke over Riya');
-                  state.consecutiveUserSpeechFrames = 0;
-                }
-              } else {
-                state.consecutiveUserSpeechFrames = 0;
-              }
-
               // Resample to 16kHz if audioContext sample rate differs
               const resampled16k = resampleTo16k(inputChannelData, state.inputAudioCtx.sampleRate);
               const pcm16Buffer = floatTo16BitPCM(resampled16k);
@@ -1285,10 +1309,10 @@ Every response must be entirely in spoken English.`,
               // Send real-time audio chunk upstream
               if (state.ws && state.ws.readyState === WebSocket.OPEN) {
                 const realtimeChunkMsg = {
-                  realtime_input: {
-                    media_chunks: [
+                  realtimeInput: {
+                    mediaChunks: [
                       {
-                        mime_type: 'audio/pcm;rate=16000',
+                        mimeType: 'audio/pcm;rate=16000',
                         data: base64Pcm,
                       },
                     ],
@@ -1419,6 +1443,7 @@ Every response must be entirely in spoken English.`,
         }
 
         toggleSessionBtn.addEventListener('click', () => {
+          ensureOutputAudioContext();
           if (state.isConnected || state.isConnecting) {
             disconnectSession(true);
             showToast('Conversation ended', '👋');
@@ -1429,6 +1454,7 @@ Every response must be entirely in spoken English.`,
 
         // Click on Center Orb also toggles session
         orbCore.addEventListener('click', () => {
+          ensureOutputAudioContext();
           toggleSessionBtn.click();
         });
 
