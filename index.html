@@ -483,6 +483,9 @@
           activeBufferSources: [],
           micLevel: 0,
           riyaLevel: 0,
+          userSpeaking: false,
+          silenceFrames: 0,
+          lastSentTranscript: '',
           consecutiveUserSpeechFrames: 0,
           transcriptCount: 0,
         };
@@ -605,7 +608,7 @@ Every response must be entirely in spoken English.`,
           // If session is already connected, dynamically steer the active session
           if (state.isConnected && state.ws && state.ws.readyState === WebSocket.OPEN) {
             const steerMsg = {
-              client_content: {
+              clientContent: {
                 turns: [
                   {
                     role: 'user',
@@ -616,10 +619,14 @@ Every response must be entirely in spoken English.`,
                     ],
                   },
                 ],
-                turn_complete: true,
+                turnComplete: true,
               },
             };
             state.ws.send(JSON.stringify(steerMsg));
+          }
+
+          if (state.speechRecognition) {
+            state.speechRecognition.lang = newMode === 'english' ? 'en-IN' : 'ta-IN';
           }
         });
 
@@ -1289,11 +1296,14 @@ Every response must be entirely in spoken English.`,
             state.scriptProcessor = state.inputAudioCtx.createScriptProcessor(bufferSize, 1, 1);
 
             state.scriptProcessor.onaudioprocess = (e) => {
+              // Silence output buffer so microphone audio doesn't feedback through local speakers
+              e.outputBuffer.getChannelData(0).fill(0);
+
               if (!state.isConnected || state.isMuted) return;
 
               const inputChannelData = e.inputBuffer.getChannelData(0);
 
-              // Calculate RMS volume for barge-in detection & visualizer meter
+              // Calculate RMS volume for visualizer meter & speech tracking
               let sum = 0;
               for (let i = 0; i < inputChannelData.length; i++) {
                 sum += inputChannelData[i] * inputChannelData[i];
@@ -1319,6 +1329,24 @@ Every response must be entirely in spoken English.`,
                   },
                 };
                 state.ws.send(JSON.stringify(realtimeChunkMsg));
+              }
+
+              // Voice Activity Tracking (VAD) & End-of-turn detection:
+              // When user finishes speaking into the microphone and pauses
+              if (!state.isRiyaSpeaking && rms > 0.025) {
+                state.userSpeaking = true;
+                state.silenceFrames = 0;
+              } else if (state.userSpeaking) {
+                state.silenceFrames++;
+                // ~18 frames is approx 750ms-900ms of pause after speech
+                if (state.silenceFrames >= 18) {
+                  state.userSpeaking = false;
+                  state.silenceFrames = 0;
+                  console.log('VAD: Silence detected after user speech. Triggering turnComplete.');
+                  if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+                    state.ws.send(JSON.stringify({ clientContent: { turnComplete: true } }));
+                  }
+                }
               }
             };
 
@@ -1361,14 +1389,18 @@ Every response must be entirely in spoken English.`,
             state.speechRecognition = new SpeechRecognition();
             state.speechRecognition.continuous = true;
             state.speechRecognition.interimResults = false;
-            state.speechRecognition.lang = 'ta-IN'; // Tamil (India) or English friendly
+            state.speechRecognition.lang = state.personaMode === 'english' ? 'en-IN' : 'ta-IN';
 
             state.speechRecognition.onresult = (event) => {
               for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
                   const transcript = event.results[i][0].transcript.trim();
-                  if (transcript) {
-                    appendTranscript('user', transcript);
+                  if (transcript && transcript !== state.lastSentTranscript) {
+                    state.lastSentTranscript = transcript;
+                    state.userSpeaking = false;
+                    state.silenceFrames = 0;
+                    console.log('Recognized speech -> sending to Riya:', transcript);
+                    sendTextMessageToGemini(transcript);
                   }
                 }
               }
